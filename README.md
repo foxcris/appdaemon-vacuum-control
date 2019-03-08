@@ -14,6 +14,7 @@ Just copy the files
 * Helper.py
 
 to your apps folder of appaemon and add the following configuration to your apps.yaml
+```
 VacuumConfigConfiguration:
   module:                   VacuumControl
   class:                    VacuumControlConfiguration
@@ -23,7 +24,7 @@ VacuumControl:
  module:                    VacuumControl
  class:                     VacuumControl
  debug:                     True
-`
+```
 
 The file Helper.py is also used by one of my [other](https://github.com/foxcris/appdaemon-blinds-control) appdaemon project. In both projects the same file is used!
 ### home-assistant configuration
