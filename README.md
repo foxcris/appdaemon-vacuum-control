@@ -25,7 +25,7 @@ VacuumControl:
  debug:                     True
 `
 
-The file Helper.py is also used by one of my [other!](https://github.com/foxcris/appdaemon-blinds-control) appdaemon project. In both projects the same file is used!
+The file Helper.py is also used by one of my [other](https://github.com/foxcris/appdaemon-blinds-control) appdaemon project. In both projects the same file is used!
 ### home-assistant configuration
 If you use the generated configuration you can directly start using automated blinds control. The following files are created:
 * config_vacuum.yaml_
