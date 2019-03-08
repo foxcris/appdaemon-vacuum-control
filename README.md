@@ -25,7 +25,7 @@ VacuumControl:
  debug:                     True
 `
 
-The file Helper.py is also used by one of my other appdaemon project. In both projects the same file is used!
+The file Helper.py is also used by one of my [other!](https://github.com/foxcris/appdaemon-blinds-control) appdaemon project. In both projects the same file is used!
 ### home-assistant configuration
 If you use the generated configuration you can directly start using automated blinds control. The following files are created:
 * config_vacuum.yaml_
@@ -46,5 +46,5 @@ The configuration file
 * config_vacuum_.yaml_
 
 includes groups for each vacuum with all the associated variables. Add these configuration file to your group configuration of home-assistant. A new group **config vacuum** should be shown afterwards in your home-assisant instance providing an vacuum configuration for each of your vacuum.
-![config vacuum group](https://github.com/foxcris/appdaemon-vacuum-control/blob/development/images/config_vacuum_group.PNG "config vacuum group")
-![vacuum configuration parameteters](https://github.com/foxcris/appdaemon-vacuum-control/blob/development/images/config_vacuum.PNG "vacuum configuration parameteters")
+![config vacuum group](images/config_vacuum_group.PNG)
+![vacuum configuration parameteters](images/config_vacuum.PNG)
