@@ -1,0 +1,10 @@
+VacuumConfigConfiguration:
+  module:                   VacuumControl
+  class:                    VacuumControlConfiguration
+  debug:                    True
+
+VacuumControl:
+ module:                    VacuumControl
+ class:                     VacuumControl
+ debug:                     True
+ 
