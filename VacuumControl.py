@@ -25,6 +25,7 @@ class VacuumControl(BaseClass):
                     cvarname = "input_boolean.control_vacuum_%s_%s" % (
                         id, configvar)
                     if self.entity_exists(cvarname):
+                        self._log_debug(f"Listen for config change on: {cvarname}")
                         handle = self.listen_state(
                             self._config_change, cvarname, entityid=id,
                             duration=changeduration)
@@ -33,6 +34,7 @@ class VacuumControl(BaseClass):
                     cvarname = "input_number.control_vacuum_%s_%s" % (
                         id, configvar)
                     if self.entity_exists(cvarname):
+                        self._log_debug(f"Listen for config change on: {cvarname}")
                         handle = self.listen_state(
                             self._config_change, cvarname, entityid=id,
                             duration=changeduration)
@@ -41,6 +43,7 @@ class VacuumControl(BaseClass):
                     cvarname = "input_datetime.control_vacuum_%s_%s" % (
                         id, configvar)
                     if self.entity_exists(cvarname):
+                        self._log_debug(f"Listen for config change on: {cvarname}")
                         handle = self.listen_state(
                             self._config_change, cvarname, entityid=id,
                             duration=changeduration)
@@ -81,8 +84,9 @@ class VacuumControl(BaseClass):
         # add global config handlers
         handledict = dict()
         for configvar in VacuumControlConfiguration.variables_boolean_global:
-            cvarname = "input_boolean.control_vacuum_%s_global" % configvar
+            cvarname = "input_boolean.control_vacuum_%s" % configvar
             if self.entity_exists(cvarname):
+                self._log_debug(f"Listen for config change on: {cvarname}")
                 handle = self.listen_state(
                     self._config_change, cvarname, duration=changeduration)
                 handledict.update({cvarname: handle})
