@@ -71,6 +71,7 @@ class VacuumControl(BaseClass):
                             % id) == "on" and self.get_state(
                             "input_boolean.control_vacuum_enable_global")
                             == "on"):
+                        self._log_debug(f"Create handle entityid: {id}")
                         vc_handle = self.run_at(
                             self._control_vaccum,
                             datetime.now() + timedelta(seconds=5), entityid=id)
@@ -119,33 +120,45 @@ class VacuumControl(BaseClass):
         vardict.update({varname: value})
         edict.update({"vardict": vardict})
 
+    def _cancel_restart_handle(self, entityid):
+        #config has changed for a specific entity
+        self._log_debug("cancel_restart_handle", prefix=entityid)
+        # cancel and create new vacuum control handle
+        vc_handle = self._get_handle(entityid, 'vc_handle')
+        if vc_handle is not None:
+            self._log_debug(f"Cancel handle for {entityid}")
+            self.cancel_timer(vc_handle)
+            vc_handle = None
+        if (self.get_state(
+            "input_boolean.control_vacuum_%s_automatic_control"
+            % entityid) == "on" and self.get_state(
+                "input_boolean.control_vacuum_enable_global") == "on"):
+            vc_handle = self.run_at(
+                self._control_vaccum,
+                datetime.now() + timedelta(seconds=5), entityid=entityid)
+        else:
+            self._log(
+                "Control vacuum global or per vacuum is disabled\
+                (Enable per vacuum: %s, Enable Global: %s)" %
+                (self.get_state(
+                    "input_boolean.control_vacuum_%s_automatic_control"
+                    % entityid), self.get_state(
+                    "input_boolean.control_vacuum_enable_global")),
+                prefix=entityid)
+        self._set_handle(entityid, "vc_handle", vc_handle)
+
     def _config_change(self, entity, attribute, old, new, kwargs):
         try:
             self._lock.acquire(True)
             entityid = kwargs.get('entityid', None)
-            self._log_debug("config_change", prefix=entityid)
-            # cancel and create new vacuum control handle
-            vc_handle = self._get_handle(entityid, 'vc_handle')
-            if vc_handle is not None:
-                self.cancel_timer(vc_handle)
-                vc_handle = None
-            if (self.get_state(
-                "input_boolean.control_vacuum_%s_automatic_control"
-                % entityid) == "on" and self.get_state(
-                    "input_boolean.control_vacuum_enable_global") == "on"):
-                vc_handle = self.run_at(
-                    self._control_vaccum,
-                    datetime.now() + timedelta(seconds=5), entityid=entityid)
+            self._log_debug(f"entityid: {entityid}, entity: {entity}, attribute: {attribute}, old: {old}, new: {new}, kwargs: {kwargs}", prefix=entityid)
+            if entityid is not None:
+                self._cancel_restart_handle(entityid)
             else:
-                self._log(
-                    "Control vacuum global or per vacuum is disabled\
-                    (Enable per vacuum: %s, Enable Global: %s)" %
-                    (self.get_state(
-                        "input_boolean.control_vacuum_%s_automatic_control"
-                        % entityid), self.get_state(
-                        "input_boolean.control_vacuum_enable_global")),
-                    prefix=entityid)
-            self._set_handle(entityid, "vc_handle", vc_handle)
+                #global config has changed
+                for eid in self._vacuumdict:
+                    # cancel and create new vacuum control handle
+                    self._cancel_restart_handle(eid)
         except Exception:
             entityid = kwargs.get('entityid', None)
             self._log_error(traceback.format_exc(), prefix=entityid)
