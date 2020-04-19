@@ -137,7 +137,7 @@ class VacuumControl(BaseClass):
                 self._control_vaccum,
                 datetime.now() + timedelta(seconds=5), entityid=entityid)
         else:
-            self._log(
+            self._log_info(
                 "Control vacuum global or per vacuum is disabled\
                 (Enable per vacuum: %s, Enable Global: %s)" %
                 (self.get_state(
@@ -170,7 +170,7 @@ class VacuumControl(BaseClass):
         try:
             self._lock.acquire(True)
             entityid = kwargs.get('entityid', None)
-            self._log("entityid: {}".format(entityid))
+            self._log_debug("entityid: {}".format(entityid))
             # detect current day
             # Return the day of the week as an integer,
             # where Monday is 1 and Sunday is 7
@@ -183,9 +183,9 @@ class VacuumControl(BaseClass):
                               7: "sunday"}
             dtime = datetime.now()
             wday = isoweekdaydict.get(dtime.isoweekday(), None)
-            self._log("Current isoweekday is {}/{}".format(
+            self._log_debug("Current isoweekday is {}/{}".format(
                 dtime.isoweekday(), wday))
-            self._log("input_datetime.control_vacuum_{}_start_time_{}"
+            self._log_debug("input_datetime.control_vacuum_{}_start_time_{}"
                       .format(entityid, wday))
             if wday is not None:
                 today = datetime.now().replace(
@@ -209,14 +209,14 @@ class VacuumControl(BaseClass):
                     dtime = datetime.now().replace(
                         hour=0, minute=0, second=0,
                         microsecond=0) + timedelta(days=1, seconds=5)
-                    self._log("Time to start vacuum has passed nexttrigger: {}"
+                    self._log_info("Time to start vacuum has passed nexttrigger: {}"
                               .format(dtime))
                     self._set_handle(entityid, "vc_handle", self.run_at(
                         self._control_vaccum,
                         dtime, entityid=entityid))
                 else:
                     # start zeit liegt später am Tag
-                    self._log("Time to start vacuum: {}"
+                    self._log_info("Time to start vacuum: {}"
                               .format(vc_start_time))
                     self._set_handle(entityid, "vc_handle", self.run_at(
                         self._start_vacuum,
@@ -241,14 +241,14 @@ class VacuumControl(BaseClass):
             self._lock.acquire(True)
             entityid = kwargs.get('entityid', None)
             self._set_handle(entityid, "vc_handle", None)
-            self._log("start vacuum %s" %
+            self._log_info("start vacuum %s" %
                       self._get_variable(entityid, "vacuumID"),
                       prefix=entityid)
             self.call_service("vacuum/start",
                               entity_id=self._get_variable(
                                   entityid, "vacuumID"))
             # Trigger neu starten
-            self._log("nexttrigger %s" %
+            self._log_debug("nexttrigger %s" %
                       (datetime.now() + timedelta(minutes=5)), prefix=entityid)
             self._set_handle(entityid, "vc_handle", self.run_at(
                 self._control_vaccum,
@@ -328,11 +328,11 @@ class VacuumControlConfiguration(BaseClass):
             # variable does not exit, config is created for the first time
             # start config creation
             if self.args["debug"]:
-                self._log("input_boolean.control_vacuum_configuration is None")
+                self._log_debug("input_boolean.control_vacuum_configuration is None")
             self.create_config_files()
         else:
             if self.args["debug"]:
-                self._log(
+                self._log_debug(
                     "input_boolean.control_vacuum_configuration is not None")
 
     def update_config_files(self, entity, attribute, old, new, duration):
@@ -345,7 +345,7 @@ class VacuumControlConfiguration(BaseClass):
             self.create_config_files()
 
     def create_config_files(self):
-        self._log("create_config_files")
+        self._log_debug("create_config_files")
         statedict = self.get_state()
         overwritefiles = True
         idlist = list()
@@ -381,7 +381,7 @@ class VacuumControlConfiguration(BaseClass):
                 overwritefiles = False
             else:
                 if self.args["debug"]:
-                    self._log("Entity %s does not match." % entity)
+                    self._log_debug("Entity %s does not match." % entity)
 
         # add global variables
         # input_boolean.control_vacuum_enable_global
