@@ -9,7 +9,7 @@ from helper.Helper import BaseClass
 class VacuumControl(BaseClass):
 
     def initialize(self):
-        self._version=1.0
+        self._version=1.1
         self._lock = Semaphore(1)
         # run over all covers an check if configurations are available
         # then start the spcific handlers for each covers
