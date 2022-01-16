@@ -9,12 +9,14 @@ from helper.Helper import BaseClass
 class VacuumControl(BaseClass):
 
     def initialize(self):
+        self._version=1.0
         self._lock = Semaphore(1)
         # run over all covers an check if configurations are available
         # then start the spcific handlers for each covers
         statedict = self.get_state()
         self._vacuumdict = dict()
         changeduration = 10
+        self._log_info(f"Runnging version: {self._version}")
         for entity in statedict:
             if re.match('^vacuum.*', entity, re.IGNORECASE):
                 # detected vacuum
