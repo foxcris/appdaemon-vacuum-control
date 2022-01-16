@@ -18,34 +18,34 @@ class VacuumControl(BaseClass):
         for entity in statedict:
             if re.match('^vacuum.*', entity, re.IGNORECASE):
                 # detected vacuum
-                id = self._getid(statedict, entity)
+                id_ = self._getid(statedict, entity)
                 handledict = dict()
                 # create listeners for config changes
                 for configvar in VacuumControlConfiguration.variables_boolean:
                     cvarname = "input_boolean.control_vacuum_%s_%s" % (
-                        id, configvar)
+                        id_, configvar)
                     if self.entity_exists(cvarname):
                         self._log_debug(f"Listen for config change on: {cvarname}")
                         handle = self.listen_state(
-                            self._config_change, cvarname, entityid=id,
+                            self._config_change, cvarname, entityid=id_,
                             duration=changeduration)
                         handledict.update({cvarname: handle})
                 for configvar in VacuumControlConfiguration.variables_number:
                     cvarname = "input_number.control_vacuum_%s_%s" % (
-                        id, configvar)
+                        id_, configvar)
                     if self.entity_exists(cvarname):
                         self._log_debug(f"Listen for config change on: {cvarname}")
                         handle = self.listen_state(
-                            self._config_change, cvarname, entityid=id,
+                            self._config_change, cvarname, entityid=id_,
                             duration=changeduration)
                         handledict.update({cvarname: handle})
                 for configvar in VacuumControlConfiguration.variables_datetime:
                     cvarname = "input_datetime.control_vacuum_%s_%s" % (
-                        id, configvar)
+                        id_, configvar)
                     if self.entity_exists(cvarname):
                         self._log_debug(f"Listen for config change on: {cvarname}")
                         handle = self.listen_state(
-                            self._config_change, cvarname, entityid=id,
+                            self._config_change, cvarname, entityid=id_,
                             duration=changeduration)
                         handledict.update({cvarname: handle})
 
@@ -58,38 +58,39 @@ class VacuumControl(BaseClass):
                     vc_handle = None
                     self._log_debug(
                         "input_boolean.control_vacuum_%s_automatic_control: %s"
-                        % (id, self.get_state(
+                        % (id_, self.get_state(
                             "input_boolean.control_vacuum_%s_automatic_control"
-                            % id)), prefix=id)
+                            % id_)), prefix=id_)
                     self._log_debug(
                         "input_boolean.control_vacuum_enable_global: %s" %
                         (self.get_state(
                             "input_boolean.control_vacuum_enable_global")),
-                        prefix=id)
+                        prefix=id_)
                     if (self.get_state(
                             "input_boolean.control_vacuum_%s_automatic_control"
-                            % id) == "on" and self.get_state(
+                            % id_) == "on" and self.get_state(
                             "input_boolean.control_vacuum_enable_global")
                             == "on"):
-                        self._log_debug(f"Create handle entityid: {id}")
+                        self._log_debug(f"Create handle entityid: {id_}")
                         vc_handle = self.run_at(
-                            self._control_vaccum,
-                            datetime.now() + timedelta(seconds=5), entityid=id)
+                            self._control_vacuum,
+                            datetime.now() + timedelta(seconds=5), entityid=id_)
                     handledict.update({"vc_handle": vc_handle})
 
                     d = dict()
                     d.update({"handledict": handledict})
                     d.update({"vardict": vardict})
-                    self._vacuumdict.update({id: d})
+                    self._vacuumdict.update({id_: d})
 
         # add global config handlers
         handledict = dict()
         for configvar in VacuumControlConfiguration.variables_boolean_global:
             cvarname = "input_boolean.control_vacuum_%s" % configvar
+            self._log_debug(f"cvarname: {cvarname}")
             if self.entity_exists(cvarname):
                 self._log_debug(f"Listen for config change on: {cvarname}")
                 handle = self.listen_state(
-                    self._config_change, cvarname, duration=changeduration)
+                    self._config_change_global, cvarname, duration=changeduration)
                 handledict.update({cvarname: handle})
         d = dict()
         d.update({"handledict": handledict})
@@ -112,6 +113,7 @@ class VacuumControl(BaseClass):
         self._log_debug("entityid: %s, varname: %s, len(edict):%s,\
                         len(vardict):%s" % (
             entityid, varname, len(edict), len(vardict)))
+        self._log_debug(f"vardict: varname: {vardict.get(varname, None)}")
         return vardict.get(varname, None)
 
     def _set_variable(self, entityid, varname, value):
@@ -134,7 +136,7 @@ class VacuumControl(BaseClass):
             % entityid) == "on" and self.get_state(
                 "input_boolean.control_vacuum_enable_global") == "on"):
             vc_handle = self.run_at(
-                self._control_vaccum,
+                self._control_vacuum,
                 datetime.now() + timedelta(seconds=5), entityid=entityid)
         else:
             self._log_info(
@@ -146,6 +148,23 @@ class VacuumControl(BaseClass):
                     "input_boolean.control_vacuum_enable_global")),
                 prefix=entityid)
         self._set_handle(entityid, "vc_handle", vc_handle)
+
+    def _get_vacuumlist(self):
+        vacuumlist = list()
+        for k in self._vacuumdict:
+            self._log_debug(f"vacuumlist: {k}")
+            if k != "global":
+                vacuumlist.append(k)
+        return vacuumlist
+
+    def _config_change_global(self, entity, attribute, old, new, kwargs):
+        #global variable changed
+        require_reset = ["input_boolean.control_vacuum_enable_global"]
+        if entity in require_reset:
+            #disable all handles
+            for vacuum in self._get_vacuumlist():
+                self._log_debug("Reset required. Disable all handles")
+                self._config_change(entity, None, old, new, {'entityid': vacuum})
 
     def _config_change(self, entity, attribute, old, new, kwargs):
         try:
@@ -165,7 +184,7 @@ class VacuumControl(BaseClass):
         finally:
             self._lock.release()
 
-    def _control_vaccum(self, kwargs):
+    def _control_vacuum(self, kwargs):
         # calculate the next start time per vacuum
         try:
             self._lock.acquire(True)
@@ -190,9 +209,7 @@ class VacuumControl(BaseClass):
             if wday is not None:
                 today = datetime.now().replace(
                     hour=0, minute=0, second=0, microsecond=0)
-                # Zeit für das öffnen der Blinds bestimmen. Wenn die Zeit VOR
-                # der aktuellen Zeit für das schließen der Blinds ist nichts
-                # machen. Dann ist die Konfiguration falsch.
+                # Zeit für das starten des Vacuum bestimmen. 
                 vc_start_time = today + timedelta(
                     hours=self.get_state(
                         "input_datetime.control_vacuum_{}_start_time_{}"
@@ -212,7 +229,7 @@ class VacuumControl(BaseClass):
                     self._log_info("Time to start vacuum has passed nexttrigger: {}"
                               .format(dtime))
                     self._set_handle(entityid, "vc_handle", self.run_at(
-                        self._control_vaccum,
+                        self._control_vacuum,
                         dtime, entityid=entityid))
                 else:
                     # start zeit liegt später am Tag
@@ -251,7 +268,7 @@ class VacuumControl(BaseClass):
             self._log_debug("nexttrigger %s" %
                       (datetime.now() + timedelta(minutes=5)), prefix=entityid)
             self._set_handle(entityid, "vc_handle", self.run_at(
-                self._control_vaccum,
+                self._control_vacuum,
                 datetime.now() + timedelta(minutes=5),
                 entityid=entityid))
         except Exception:
@@ -261,7 +278,7 @@ class VacuumControl(BaseClass):
             self._log_error("Catched Error. Restart in %s" %
                             nexttrigger, prefix=entityid)
             self._set_handle(entityid, "vc_handle", self.run_at(
-                self._control_vaccum,
+                self._control_vacuum,
                 datetime.now() + timedelta(seconds=5),
                 entityid=entityid))
         finally:
